@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<robot name="mbot" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <xacro:include filename="$(find robot_description)/my_robot_base.xacro" />
+    
+    <xacro:include filename="$(find robot_description)/my_robot_lidar.xacro" />
+
+    <joint name="lidar_joint" type="fixed">
+        <origin xyz="${base_radius-lidar_radius} 0 ${base_length+wheel_radius/3}" rpy="0 0 0" />
+        <parent link="base_link" />
+        <child link="lidar_link" />
+    </joint>
+    
+    <xacro:my_robot_base/>
+    <xacro:lidar/>
+
+</robot>
