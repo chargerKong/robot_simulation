@@ -15,6 +15,8 @@ setup(
         ('share/' + package_name, glob('urdf/*.xacro')),
         ('share/' + package_name, glob('urdf/sensors/*.xacro')),
         ('share/' + package_name, glob('meshes/*')),
+        ('share/' + package_name, glob('world/*')),
+        ('share/' + package_name, glob('model/small_warehouse/*')),
     ],
     install_requires=['setuptools'],
     zip_safe=True,

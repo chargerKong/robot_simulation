@@ -6,17 +6,28 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
 from launch.substitutions import Command, PathJoinSubstitution, LaunchConfiguration
 from launch_ros.substitutions import FindPackagePrefix
+from launch.actions import DeclareLaunchArgument
+from launch.conditions import IfCondition
+
+from launch.actions import OpaqueFunction
+
+from launch.actions import ExecuteProcess
+from launch.substitutions import PythonExpression
+
 
 
 def generate_launch_description():
     pkg_gazebo_ros = get_package_share_directory("gazebo_ros")
+    # "warehouse.world".
+    pkg_dir = get_package_share_directory('robot_description')
+    # os.environ["GAZEBO_MODEL_PATH"] = os.path.join(pkg_dir, "model")
+    world = os.path.join(pkg_dir, 'warehouse.world')
 
-    # gazebo launch
     gazebo = IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(
-                    os.path.join(pkg_gazebo_ros, 'launch', 'gazebo.launch.py')
-                )
-            )
+        PythonLaunchDescriptionSource(
+            os.path.join(pkg_gazebo_ros, 'launch', 'gazebo.launch.py')
+        ),
+    )
 
     use_sim_time = LaunchConfiguration('use_sim_time', default='true')
     # GAZEBO_MODEL_PATH has to be correctly set for Gazebo to be able to find the model
@@ -40,15 +51,15 @@ def generate_launch_description():
                     }],
     )
 
-    joint_state_pub = Node(
-        package='joint_state_publisher',
-        executable='joint_state_publisher',
-    )
+    # gazebo launch
 
     return LaunchDescription([
+
+        DeclareLaunchArgument(
+            "world", default_value=world,
+            description="test value"
+        ),
         gazebo,
         robot_pub,
-    #    joint_state_pub,
         spawn_entity,
     ])
-
