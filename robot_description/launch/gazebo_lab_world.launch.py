@@ -7,20 +7,15 @@ from launch_ros.actions import Node
 from launch.substitutions import Command, PathJoinSubstitution, LaunchConfiguration
 from launch_ros.substitutions import FindPackagePrefix
 from launch.actions import DeclareLaunchArgument
-from launch.conditions import IfCondition
 
-from launch.actions import OpaqueFunction
-from launch.substitutions import PythonExpression
-
-from launch.actions import ExecuteProcess
-from launch.substitutions import PythonExpression
 from launch.substitutions import ThisLaunchFileDir
-
-
 
 def generate_launch_description():
     pkg_gazebo_ros = get_package_share_directory("gazebo_ros")
     # "warehouse.world".
+    pkg_dir = get_package_share_directory('robot_description')
+    os.environ["GAZEBO_MODEL_PATH"] = os.path.join(pkg_dir, "model")
+    world = os.path.join(pkg_dir, 'warehouse.world')
 
     gazebo = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -44,13 +39,18 @@ def generate_launch_description():
                     {'robot_description': Command([
                         PathJoinSubstitution([FindPackagePrefix('xacro'), "bin", "xacro"]),
                         ' ',
-                        PathJoinSubstitution(
+                     PathJoinSubstitution(
                             [get_package_share_directory('robot_description'), 'my_robot.xacro']),
                     ])
                     }],
     )
     # gazebo launch
     return LaunchDescription([
+
+        DeclareLaunchArgument(
+            "world", default_value=world,
+            description="world description file name"
+        ),
         gazebo,
         robot_pub,
         spawn_entity,

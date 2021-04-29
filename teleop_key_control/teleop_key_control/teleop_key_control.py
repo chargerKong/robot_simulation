@@ -11,10 +11,10 @@ class RobotPublisher(Node):
         self.publisher_ = self.create_publisher(Twist, 'cmd_vel', 10)
         # timer_period = 0.5  # seconds
         self.key_map = {
-            "i": (-1.0, 0.0),
-            "k": (1.0, 0.0),
-            "j": (0.0, -1.0),
-            "l": (0.0, 1.0),
+            "i": (-0.01, 0.0),
+            "k": (0.01, 0.0),
+            "j": (0.0, -0.01),
+            "l": (0.0, 0.01),
             "s": (0.0, 0.0)
         }
         self._logger.info("""
