@@ -17,7 +17,7 @@ class RobotMove(Node):
         self.publisher_ = self.create_publisher(Twist, 'cmd_vel', 10)
         self.dist_thresh = 0.4
         self.turning_speed = 0.1
-        self.forward_speed = -0.05
+        self.forward_speed = 0.05
 
     def scan_callback(self, msg):
         self.leftfront_dist = msg.ranges[180]
@@ -42,16 +42,16 @@ class RobotMove(Node):
             self._logger.info("first1")
         elif self.leftfront_dist > d and  self.rightfront_dist < d:
             # 左转
-            msg.angular.z = self.turning_speed
+            msg.angular.z = -self.turning_speed
             self._logger.info("first2")
 
         elif self.leftfront_dist < d  and self.rightfront_dist > d:
-            msg.angular.z = -self.turning_speed
+            msg.angular.z = self.turning_speed
             self._logger.info("first3")
 
         else:
             self._logger.info("first4")
-            msg.angular.z = self.turning_speed
+            msg.angular.z = -self.turning_speed
 
 
         self.publisher_.publish(msg)

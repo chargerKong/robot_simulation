@@ -1,0 +1,79 @@
+<?xml version="1.0" ?>
+<robot name="example2">
+     <link name="base_link">
+        <visual>
+            <origin xyz="0 0 0.08" rpy="0 0 0"/>
+            <geometry>
+                <cylinder length="0.1" radius="0.20"/>
+            </geometry>
+        </visual>
+        <collision>
+            <origin xyz="0 0 0.08" rpy="0 0 0"/>
+            <geometry>
+                <cylinder length="0.1" radius="0.20"/>
+            </geometry>
+        </collision>
+        <inertial>
+            <mass value="20" />                                                                                                                                                      
+            <inertia ixx="0.24" ixy = "0" ixz = "0"
+                     iyy="0.24" iyz = "0"
+                     izz="0.4" />
+        </inertial>
+    </link>
+
+    <link name="left_wheel_link">
+        <visual>
+            <origin xyz="0 0 0" rpy="1.57 0 0"/>
+            <geometry>
+                <cylinder length="0.025" radius="0.06"/>
+            </geometry>
+        </visual>
+        <collision>
+            <origin xyz="0 0 0" rpy="1.57 0 0"/>
+            <geometry>
+                <cylinder length="0.025" radius="0.06"/>
+            </geometry>
+        </collision>
+        <inertial>
+            <mass value="5" />                                                                                                                                                      
+            <inertia ixx="0.00228" ixy = "0" ixz = "0"
+                     iyy="0.00228" iyz = "0"
+                     izz="0.0015" />
+        </inertial>
+    </link>
+
+    <joint name="base_lefty" type="continuous">
+        <origin xyz="0 0.2 0.06" rpy="0 0 0" />
+        <parent link="base_link" />
+        <child link="left_wheel_link" />
+        <axis xyz="0 1 0" />
+    </joint>
+
+    <link name="right_wheel_link">
+        <visual>
+            <origin xyz="0 0 0" rpy="1.57 0 0"/>
+            <geometry>
+                <cylinder length="0.025" radius="0.06"/>
+            </geometry>
+        </visual>
+        <collision>
+            <origin xyz="0 0 0" rpy="1.57 0 0"/>
+            <geometry>
+                <cylinder length="0.025" radius="0.06"/>
+            </geometry>
+        </collision>
+        <inertial>
+            <mass value="5" />    
+            <inertia ixx="0.00228" ixy = "0" ixz = "0" 
+                     iyy="0.00228" iyz = "0" 
+                     izz="0.0015" />
+        </inertial>
+    </link>
+
+    <joint name="base_right" type="continuous">
+        <origin xyz="0 -0.2 0.06" rpy="0 0 0" />
+        <parent link="base_link" />
+        <child link="right_wheel_link" />
+        <axis xyz="0 1 0" />
+    </joint>
+</robot>
