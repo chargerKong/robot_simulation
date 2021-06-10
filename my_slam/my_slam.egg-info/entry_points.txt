@@ -1,0 +1,3 @@
+[console_scripts]
+myslam = my_slam.main:main
+
