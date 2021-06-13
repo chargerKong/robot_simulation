@@ -1,13 +1,11 @@
 import rclpy
 from rclpy.node import Node
-# from sensor_msgs import msg
 from sensor_msgs.msg import LaserScan
 from rclpy.qos import qos_profile_sensor_data
 from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import Odometry, Path
+from my_slam.imls_icp import Imls_icp
 import numpy as np
-from imls_icp import Imls_icp
-
 
 class SLAM(Node):
 
@@ -38,12 +36,12 @@ class SLAM(Node):
     def scan_callback(self, msg):
         if self.is_fisrt_frame:
             self.is_fisrt_frame = False
-            self.pub_scan_path(self.pre_laser_pose, self.imls_path_publisher, self.imls_path)
+            self.pub_scan_path(
+                self.pre_laser_pose, self.imls_path_publisher, self.imls_path)
             self.pre_pointcloud = self.convert_scan_to_pointcloud(msg)
             return 
         
         now_pointcloud = self.convert_scan_to_pointcloud(msg)
-        
         self.matcher.set_source_pointcloud(now_pointcloud)
         self.matcher.set_target_pointcloud(self.pre_pointcloud)
 
@@ -58,7 +56,9 @@ class SLAM(Node):
 
             now_pose = last_pose * delta_pose
 
-            self.pre_pointcloud = np.array([now_pose[0, 2], now_pose[1, 2], np.math.tan(now_pose[1, 0], now_pose[0, 0])])
+            self.pre_laser_pose = np.array([now_pose[0, 2], now_pose[1, 2], np.arctan2(now_pose[1, 0], now_pose[0, 0])])
+
+            self.pub_scan_path(self.pre_laser_pose, self.imls_path_publisher, self.imls_path)
         else:
             self._logger.info("Match failed")
         
@@ -70,6 +70,10 @@ class SLAM(Node):
         if self.is_fisrt_frame:
             return
         self.pub_odom_path(msg, self.odom_path_publisher, self.odom_path)
+        # nowpose = [msg.pose.pose.position.x,
+        #         msg.pose.pose.position.y, 
+        #         2 * np.math.acos(msg.pose.pose.orientation.w)]
+        # self.pub_scan_path(nowpose, self.imls_path_publisher, self.imls_path)
 
 
     def pub_scan_path(self, pose, publisher, path):

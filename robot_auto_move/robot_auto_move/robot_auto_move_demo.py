@@ -20,6 +20,7 @@ class RobotMove(Node):
         self.forward_speed = 0.05
 
     def scan_callback(self, msg):
+        # print(msg)
         self.leftfront_dist = msg.ranges[180]
         self.front_dist = msg.ranges[90]
         self.rightfront_dist = msg.ranges[0]
