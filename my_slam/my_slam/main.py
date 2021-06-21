@@ -45,9 +45,10 @@ class SLAM(Node):
         self.matcher.set_source_pointcloud(now_pointcloud)
         self.matcher.set_target_pointcloud(self.pre_pointcloud)
 
+        # 通过match现在和上帧的点云，获得delta_pose
         is_match, delta_pose, cov = self.matcher.match()
         if is_match:
-
+            print("Match Successful: {}, {}, {}".format(delta_pose[0, 2], delta_pose[1, 2], np.arctan2(delta_pose[1, 0], delta_pose[0, 0]));
             last_pose = np.array([
                 [np.cos(self.pre_laser_pose[2]), -np.sin(self.pre_laser_pose[2]), self.pre_laser_pose[0]],
                 [np.sin(self.pre_laser_pose[2]), np.cos(self.pre_laser_pose[2]), self.pre_laser_pose[1]],
@@ -62,7 +63,7 @@ class SLAM(Node):
         else:
             self._logger.info("Match failed")
         
-        self.pre_laser_pose = now_pose
+        self.pre_pointcloud = now_pointcloud
 
         
 
