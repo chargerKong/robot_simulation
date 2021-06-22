@@ -47,8 +47,10 @@ class SLAM(Node):
 
         # 通过match现在和上帧的点云，获得delta_pose
         is_match, delta_pose, cov = self.matcher.match()
+        print(delta_pose)
         if is_match:
-            print("Match Successful: {}, {}, {}".format(delta_pose[0, 2], delta_pose[1, 2], np.arctan2(delta_pose[1, 0], delta_pose[0, 0]));
+            print("Match Successful: {}, {}, {}".format(delta_pose[0, 2], delta_pose[1, 2], \
+                np.arctan2(delta_pose[1, 0], delta_pose[0, 0])))
             last_pose = np.array([
                 [np.cos(self.pre_laser_pose[2]), -np.sin(self.pre_laser_pose[2]), self.pre_laser_pose[0]],
                 [np.sin(self.pre_laser_pose[2]), np.cos(self.pre_laser_pose[2]), self.pre_laser_pose[1]],
@@ -123,7 +125,7 @@ class SLAM(Node):
         把激光消息转换为激光坐标系下的二维点云
         """
         n = len(msg.ranges)
-        pcs = np.zeros((2, n))
+        pcs = np.zeros((n, 2))
         angle = msg.angle_min
         for i in range(n):
             if msg.ranges[i] < msg.range_min or msg.ranges[i] > msg.range_max:
@@ -133,8 +135,8 @@ class SLAM(Node):
             ly = msg.ranges[i] * np.cos(angle)
             if not lx or not ly:
                 continue
-            pcs[0][i] = lx
-            pcs[1][i] = ly
+            pcs[i][0] = lx
+            pcs[i][1] = ly
             
         return pcs
 
