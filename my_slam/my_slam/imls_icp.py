@@ -2,7 +2,6 @@ import numpy as np
 from numpy.core.fromnumeric import shape
 from numpy.linalg.linalg import norm
 from sklearn.neighbors import KDTree
-
 # from rosidl_parser.definition import Include
 
 class Imls_icp:
@@ -47,7 +46,7 @@ class Imls_icp:
                 self.target_pointcloude_normal[i] = normal
 
         result = np.identity(3)
-        covariance = np.ones(3)
+        covariance = np.ones((3, 3))
         for i in range(self.m_iterations):
             # 位姿变换
             in_cloud = np.zeros(shape=(len(self.now_pointcloud), 2))
@@ -55,13 +54,102 @@ class Imls_icp:
                 origin_pose = np.array([*self.now_pointcloud[ix], 1])
                 now_pose = result @ origin_pose
                 in_cloud[ix] = np.array([now_pose[0], now_pose[1]])
-        # return True, result, None
-
-        ref_cloud, ref_normal, in_cloud = self.projection_now_to_target(in_cloud)
         
 
+        ref_cloud, ref_normal, in_cloud = self.projection_now_to_target(in_cloud)
 
-    def project_now_to_target(self, in_cloud):
+        if len(in_cloud) < 5 or len(ref_cloud) < 5:
+            print("Not Enough Correspondence: {}, {}".format(len(in_cloud), len(ref_cloud)))
+            return False, result, None
+        # 计算帧间位移，从当前的now到之前的target
+        is_success, delta_trans = self.solve_motion(in_cloud,
+                                                    ref_cloud,
+                                                    ref_normal)
+
+        return True, result, None
+        
+    def solve_motion(self, in_cloud, ref_cloud, ref_normal):
+        """
+        求解now在target下的位姿
+        """
+        M = np.zeros((4, 4))
+        gt = np.zeros((1, 4))
+
+
+        for i in range(len(in_cloud)):
+            p = in_cloud[i]
+            refp = ref_cloud[i]
+            ni = np.expand_dims(ref_normal[i], axis=1)
+            # define of point to line metric
+            Ci = ni @ ni.T
+            # construct Mi
+            Mi = np.array([[1, 0, p[0], -p[1]], [0, 1, p[1], p[0]]])
+            M += Mi.T @ Ci @ Mi
+            gt += -2 * np.expand_dims(refp, axis = 0) @ Ci @ Mi
+
+        g = gt.T
+
+        M = 2 * M
+        A = M[0:2, 0:2]
+        B = M[0:2, 2:4]
+        D = M[2:4, 2:4]
+
+        S = D - B.T@np.linalg.inv(A)@B
+        SA = np.linalg.det(S) * np.linalg.inv(S)
+
+        # 左边式子a lambda^2 + b lambda + c
+        t = np.zeros((4, 4))
+        t[:2, :2] = np.linalg.inv(A) @ B @ SA.T @ SA @ B.T @ np.linalg.inv(A.T)
+        t[:2, 2:4] = -np.linalg.inv(A) @ B @ SA.T @ SA
+        t[2:4, :2] = t[:2, 2:4].T
+        t[2:4, 2:4] = SA.T @ SA
+        c = g.T @ t @ g
+
+        t[:2, :2] = np.linalg.inv(A) @ B @ SA @ B.T @ np.linalg.inv(A.T)
+        t[:2, 2:4] = -np.linalg.inv(A.T) @ B @ SA
+        t[2:4, :2] = t[:2, 2:4].T
+        t[2:4, 2:4] = SA
+        b = 4 * g.T @ t @ g
+
+        t[:2, :2] = np.linalg.inv(A) @ B @ B.T @ np.linalg.inv(A.T)
+        t[:2, 2:4] = -np.linalg.inv(A) @ B
+        t[2:4, :2] = t[:2, 2:4].T
+        t[2:4, 2:4] = np.identity(2)
+        a = 4 * g.T @ t @ g
+
+        # 计算(31)右边lambda的系数，lambda_coeff分别对应0次-4次
+        p = [-np.linalg.det(S), 2 * (S[0,0] + S[1,1])]
+        lambda_coeff = [16, 8 * p[1],p[1] * p[1] + 4 * p[0], 2 * p[1] * p[0], p[0]]
+        # lambda_coeff = [p[0], 2 * p[1] * p[0], p[1] * p[1] + 4 * p[0],8 * p[1], 16]
+        # 左右合并
+        poly_coeff = np.array([
+            - lambda_coeff[0],
+            - lambda_coeff[1],
+            np.squeeze(a) - lambda_coeff[2],
+            np.squeeze(b) - lambda_coeff[3],
+            np.squeeze(c) - lambda_coeff[4]
+        ]) 
+        # 求解四次多项式
+        lambda_, is_success = self.solver_fourth_order(poly_coeff)
+        
+        if not is_success:
+            self._logger.info("solve polynomial failed")
+            return False, None
+
+        W = np.zeros((4, 4))
+        W[2:4, 2:4] = np.identity(2)
+        res = -np.linalg.inv((2 * M + 2 * lambda_ * W)) @ g
+        # res1 = -np.linalg.inv((2 * M + 2 * lambda_ * W)) @ g
+        # theta = np.arctan2(res[3], res[2])
+        delta_Trans = np.array([
+            [res[2], -res[3], res[0]],
+            [res[3], res[2], res[1]],
+            [0, 0, 1]
+        ])
+        return True, delta_Trans
+
+
+    def projection_now_to_target(self, in_cloud):
         """
         为每一个当前帧的点云中的激光点，计算匹配的点和对应的法向量
         return: out_cloud 当前帧的匹配点云
@@ -120,7 +208,6 @@ class Imls_icp:
         
         return True, height
 
-
     
     def compute_normal(self, points):
         """
@@ -130,3 +217,14 @@ class Imls_icp:
         eigvalue, eigvector = np.linalg.eig(points.T@points)
         min_eig_index = np.argmin(eigvalue)
         return eigvector[:, min_eig_index]
+
+    def solver_fourth_order(self, coeff):
+        """
+        求解多项式的根，返回第一个实根
+        """
+        for ans in np.roots(coeff):
+            if isinstance(ans, np.complex128) or isinstance(ans, np.complex64) or np.abs(ans) < 1e-4:
+                continue
+                
+            return ans, True
+        return 0, False

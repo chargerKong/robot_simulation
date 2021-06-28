@@ -57,7 +57,7 @@ class SLAM(Node):
                 [0 ,0 ,1]
             ])
 
-            now_pose = last_pose * delta_pose
+            now_pose = last_pose @ delta_pose
 
             self.pre_laser_pose = np.array([now_pose[0, 2], now_pose[1, 2], np.arctan2(now_pose[1, 0], now_pose[0, 0])])
 
