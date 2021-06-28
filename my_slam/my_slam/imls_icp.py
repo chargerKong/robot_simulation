@@ -46,7 +46,9 @@ class Imls_icp:
                 self.target_pointcloude_normal[i] = normal
 
         result = np.identity(3)
+
         covariance = np.ones((3, 3))
+
         for i in range(self.m_iterations):
             # 位姿变换
             in_cloud = np.zeros(shape=(len(self.now_pointcloud), 2))
@@ -54,8 +56,7 @@ class Imls_icp:
                 origin_pose = np.array([*self.now_pointcloud[ix], 1])
                 now_pose = result @ origin_pose
                 in_cloud[ix] = np.array([now_pose[0], now_pose[1]])
-        
-
+     
         ref_cloud, ref_normal, in_cloud = self.projection_now_to_target(in_cloud)
 
         if len(in_cloud) < 5 or len(ref_cloud) < 5:
