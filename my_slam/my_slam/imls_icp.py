@@ -66,8 +66,7 @@ class Imls_icp:
         is_success, delta_trans = self.solve_motion(in_cloud,
                                                     ref_cloud,
                                                     ref_normal)
-
-        return True, result, None
+        return is_success, delta_trans, None
         
     def solve_motion(self, in_cloud, ref_cloud, ref_normal):
         """

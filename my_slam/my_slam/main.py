@@ -29,7 +29,7 @@ class SLAM(Node):
         self.odom_subscribe = self.create_subscription(
             Odometry, 'odom', self.odom_callback, qos_profile_sensor_data)
         self.is_fisrt_frame = True
-        self.pre_pointcloud = None
+        # self.pre_pointcloud = None
         self.pre_laser_pose = np.zeros(3)
 
 

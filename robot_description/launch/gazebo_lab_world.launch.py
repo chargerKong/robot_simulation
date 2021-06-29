@@ -15,7 +15,9 @@ def generate_launch_description():
     # "warehouse.world".
     pkg_dir = get_package_share_directory('robot_description')
     os.environ["GAZEBO_MODEL_PATH"] = os.path.join(pkg_dir, "model")
-    world = os.path.join(pkg_dir, 'warehouse.world')
+    #os.environ["GAZEBO_MODEL_PATH"] = "/home/kong/dev_ws/src/robot_description/model"
+    # world = os.path.join(pkg_dir, 'warehouse.world')
+    world = os.path.join(pkg_dir, 'turtlebot3.world')
 
     gazebo = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
