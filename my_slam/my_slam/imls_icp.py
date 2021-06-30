@@ -10,10 +10,10 @@ class Imls_icp:
         self.m_r = _r
         self.m_h = _h
         self.m_iterations = _iter
-        self.pre_pointcloud = None
-        self.now_pointcloud = None
-        # self.pre_kdt = None
-        self.target_pointcloude_normal = None
+        # self.pre_pointcloud = None
+        # self.now_pointcloud = None
+        # # self.pre_kdt = None
+        # self.target_pointcloude_normal = None
 
     def set_source_pointcloud(self, pcloud):
         self.now_pointcloud = pcloud
@@ -48,24 +48,36 @@ class Imls_icp:
         result = np.identity(3)
 
         covariance = np.ones((3, 3))
-
+        
         for i in range(self.m_iterations):
             # 位姿变换
             in_cloud = np.zeros(shape=(len(self.now_pointcloud), 2))
+            # 可能可以优化一下，直接矩阵乘法
             for ix in range(len(self.now_pointcloud)):
                 origin_pose = np.array([*self.now_pointcloud[ix], 1])
                 now_pose = result @ origin_pose
                 in_cloud[ix] = np.array([now_pose[0], now_pose[1]])
-     
-        ref_cloud, ref_normal, in_cloud = self.projection_now_to_target(in_cloud)
+            # print("before in_cloud:{}".format(len(in_cloud)))
+            ref_cloud, ref_normal, in_cloud = self.projection_now_to_target(in_cloud)
+            # print("after in_cloud:{}".format(len(in_cloud)))
+            if len(in_cloud) < 5 or len(ref_cloud) < 5:
+                print("Not Enough Correspondence: {}, {}".format(len(in_cloud), len(ref_cloud)))
+                return False, result, None
+            # print("incloud shape:{}, ref_cloud shape:{}, ref_normal:{}".format((in_cloud.shape), (ref_cloud.shape), (ref_normal.shape)))
+            # 计算帧间位移，从当前的now到之前的target
+            is_success, delta_trans = self.solve_motion(in_cloud,
+                                                        ref_cloud,
+                                                        ref_normal)
+            if not is_success:
+                return False, result, None
+            # print("delta_trans: {}, result,{}".format(delta_trans, result))        
+            result = delta_trans * result
+            # print("result: {}".format(result))
+            delta_dist = np.math.sqrt(delta_trans[0, 2] * delta_trans[0, 2] + delta_trans[1, 2] * delta_trans[1, 2])
+            delta_angle = np.arctan2(delta_trans[1, 0], delta_trans[0, 0])
+            if delta_dist <  0.001 and delta_angle:
+                break
 
-        if len(in_cloud) < 5 or len(ref_cloud) < 5:
-            print("Not Enough Correspondence: {}, {}".format(len(in_cloud), len(ref_cloud)))
-            return False, result, None
-        # 计算帧间位移，从当前的now到之前的target
-        is_success, delta_trans = self.solve_motion(in_cloud,
-                                                    ref_cloud,
-                                                    ref_normal)
         return is_success, delta_trans, None
         
     def solve_motion(self, in_cloud, ref_cloud, ref_normal):
@@ -130,10 +142,11 @@ class Imls_icp:
             np.squeeze(c) - lambda_coeff[4]
         ]) 
         # 求解四次多项式
+        print("poly_coeff:", poly_coeff)
         lambda_, is_success = self.solver_fourth_order(poly_coeff)
         
         if not is_success:
-            self._logger.info("solve polynomial failed")
+            print("solve polynomial failed")
             return False, None
 
         W = np.zeros((4, 4))
@@ -142,11 +155,11 @@ class Imls_icp:
         # res1 = -np.linalg.inv((2 * M + 2 * lambda_ * W)) @ g
         # theta = np.arctan2(res[3], res[2])
         delta_Trans = np.array([
-            [res[2], -res[3], res[0]],
-            [res[3], res[2], res[1]],
+            [res[2][0], -res[3][0], res[0][0]],
+            [res[3][0], res[2][0], res[1][0]],
             [0, 0, 1]
         ])
-        return True, delta_Trans
+        return True, np.real(delta_Trans)
 
 
     def projection_now_to_target(self, in_cloud):
@@ -166,18 +179,19 @@ class Imls_icp:
             # 如果法向量不存在，则不要这个点
             if np.any(near_normal == np.inf):
                 continue
-            # 如果距离太近了，也不要整个点
-            if dist[0][0] > self.m_h * self.m_h:
+            # 如果距离太远了，也不要这个点
+            if dist[0][0] > self.m_h:
                 continue
             # 进行匹配
             height, is_success = self.implicit_mls_func(in_cloud[idx])
+            # print("height:{}".format(height))
             if not is_success or not height:
                 continue
             yi = in_cloud[idx] - height * near_normal
             res_in_cloud.append(in_cloud[idx])
-            res_out_cloud.append(yi)
-            res_out_normal.append(near_normal)
-        return np.asarray(res_out_cloud), np.asarray(res_out_normal), np.asarray(res_in_cloud)
+            res_out_cloud.append(yi[0])
+            res_out_normal.append(near_normal[0])
+        return np.array(res_out_cloud), np.array(res_out_normal), np.array(res_in_cloud)
             
 
     def implicit_mls_func(self, xi):
@@ -187,26 +201,27 @@ class Imls_icp:
         weight_sum = 0
         # 用于寻找xi最近的20个点
         search_num = 20
-        ind, dist = self.pre_kdt.query_radius([xi], r=self.m_h, sort_results=True, return_distance=True)
+        # print("xi:{}, \nself.pre_pointcloud:\n{}".format(xi, self.pre_pointcloud))
+        ind, dist = self.pre_kdt.query_radius([xi], r=1, sort_results=True, return_distance=True)
         ind, dist = ind[:search_num], dist[:search_num]
 
         # 如果数量太少，则认为没有匹配点
-        if len(ind) < 3:
-            return False, 0
-
+        if len(ind[0]) < 3:
+            return 0, False
         # 计算距离
         denominator = 0
         numerator = 0
-        for i in range(len(ind)):
+        for i in ind[0]:
             exph = -np.power(np.linalg.norm(xi - self.pre_pointcloud[i]), 2) / (self.m_h * self.m_h)
             w_x = np.math.exp(exph)
             
-            numerator += w_x * (xi - self.pre_pointcloud[i].T @ self.target_pointcloude_normal[i])
+            numerator += w_x * (xi - self.pre_pointcloud[i]) @ -self.target_pointcloude_normal[i: i+1].T
             denominator += w_x
-
+        if denominator < 1e-5:
+            print("xi:{}, point:{}".format(xi, self.pre_pointcloud[ind[0]]))
         height = numerator / denominator
-        
-        return True, height
+        height = height if height > 0 else -height
+        return height[0], True
 
     
     def compute_normal(self, points):
@@ -223,8 +238,9 @@ class Imls_icp:
         求解多项式的根，返回第一个实根
         """
         for ans in np.roots(coeff):
-            if isinstance(ans, np.complex128) or isinstance(ans, np.complex64) or np.abs(ans) < 1e-4:
+            if np.imag(ans) > 1e-6:
                 continue
-                
+            elif np.real(ans) < 1e-6:
+                continue
             return ans, True
         return 0, False

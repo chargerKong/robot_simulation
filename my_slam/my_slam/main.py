@@ -5,6 +5,7 @@ from rclpy.qos import qos_profile_sensor_data
 from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import Odometry, Path
 from my_slam.imls_icp import Imls_icp
+import math
 import numpy as np
 
 class SLAM(Node):
@@ -47,7 +48,7 @@ class SLAM(Node):
 
         # 通过match现在和上帧的点云，获得delta_pose
         is_match, delta_pose, cov = self.matcher.match()
-        print(delta_pose)
+        print("delta_pose:,", delta_pose)
         if is_match:
             print("Match Successful: {}, {}, {}".format(delta_pose[0, 2], delta_pose[1, 2], \
                 np.arctan2(delta_pose[1, 0], delta_pose[0, 0])))
@@ -131,8 +132,9 @@ class SLAM(Node):
             if msg.ranges[i] < msg.range_min or msg.ranges[i] > msg.range_max:
                 continue
             angle += msg.angle_increment
-            lx = msg.ranges[i] * np.sin(angle)
-            ly = msg.ranges[i] * np.cos(angle)
+            # 计算单个值的三角函数，math比numpy的快
+            lx = msg.ranges[i] * math.sin(angle)
+            ly = msg.ranges[i] * math.cos(angle)
             if not lx or not ly:
                 continue
             pcs[i][0] = lx
