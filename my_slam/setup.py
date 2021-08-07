@@ -20,7 +20,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            "myslam = my_slam.main:main"
+            "myslam = my_slam.main:main",
+            "icp = my_slam.main_icp:main"
         ],
     },
 )

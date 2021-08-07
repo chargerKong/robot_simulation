@@ -29,11 +29,13 @@ to  control the robot and press s to stop the robot
     def key_map(self, ch):
         
         maps = {
+            "u": (self.base_speed, self.base_speed),
+            "o": (self.base_speed, -self.base_speed),
             "i": (self.base_speed, 0.0),
             "k": (-self.base_speed, 0.0),
             "j": (0.0, self.base_speed),
             "l": (0.0, -self.base_speed),
-            "s": (0.0, 0.0)
+            "s": (0.0, 0.0),
         }
         if ch not in maps.keys():
             return None

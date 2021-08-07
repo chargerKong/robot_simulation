@@ -4,7 +4,7 @@ from numpy.linalg.linalg import norm
 from sklearn.neighbors import KDTree
 # from rosidl_parser.definition import Include
 
-class Imls_icp:
+class ICP:
     
     def __init__(self, _r=0.03, _h=0.1, _iter=10):
         self.m_r = _r
@@ -25,9 +25,7 @@ class Imls_icp:
         self.pre_kdt = KDTree(self.pre_pointcloud)
         self.have_normals = False
 
-    def remove_nan_point(self, pointcloud):
-        np.delete(pointcloud, np.where(np.isnan(pointcloud)))
-
+    
     def match(self):
         # 若没有计算法向量，则计算法向量
         if self.have_normals == False:
