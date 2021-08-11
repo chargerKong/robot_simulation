@@ -66,8 +66,8 @@ to  control the robot and press s to stop the robot
                     self._logger.info("publish x:{}， z:{}".format(msg.linear.x, msg.angular.z))
                 elif ord(ch) == 0x3:
                     break
-        except e:
-            print(e)
+        except:
+            print("unk")
             # finally:
         msg = Twist()
         msg.angular.x = 0.0

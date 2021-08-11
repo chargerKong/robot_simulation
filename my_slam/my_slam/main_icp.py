@@ -1,3 +1,4 @@
+from inspect import CO_NESTED
 from numpy.core.fromnumeric import resize
 import rclpy
 from rclpy.node import Node
@@ -78,8 +79,8 @@ class ICP():
             angle = (np.arctan2(R[1, 0], R[0, 0])) * 180 / np.pi
 
             if abs(angle) < 0.0001 and sum(abs(t)) < 0.0001:
-                print("iters:", j)
-                print("delta angle is:{}, delta t is: {}".format(angle, t))
+                # print("iters:", j)
+                # print("delta angle is:{}, delta t is: {}".format(angle, t))
                 break
             
         return total_R
@@ -110,10 +111,14 @@ class SLAM(Node):
         self.is_fisrt_frame = True
         self.scan_data = dict()
         self.count = 0
+        self.pre_laser_pose = None
 
     def scan_callback(self, msg):
         if self.is_fisrt_frame:
+            if self.pre_laser_pose is None:
+                return
             self.is_fisrt_frame = False
+            
             self.pub_scan_path(
                 self.pre_laser_pose, self.imls_path_publisher, self.imls_path)
             self.pre_pointcloud = self.convert_scan_to_pointcloud(msg)
@@ -121,10 +126,10 @@ class SLAM(Node):
         self.scan_data[self.count] = msg.ranges.tolist()
         self.count += 1
         print("data lens:", len(self.scan_data))
-        if self.count >= 20:
-            print("data write")
-            with open("rotate_data.txt", "w") as f:
-                f.write(json.dumps(self.scan_data))
+        # if self.count >= 20:
+        #     print("data write")
+        #     with open("rotate_data.txt", "w") as f:
+        #         f.write(json.dumps(self.scan_data))
             
         now_pointcloud = self.convert_scan_to_pointcloud(msg)
         # with open("rotation.txt", "a") as f:
@@ -137,17 +142,16 @@ class SLAM(Node):
         # t_temp = (delta_iso@np.hstack((self.pre_pointcloud, np.ones((self.pre_pointcloud.shape[0], 1)))).T)
         # print( np.mean(t_temp.T[:,:2] - now_pointcloud))
 
-        # pre_iso = np.array([[np.cos(self.pre_laser_pose[2]), -np.sin(self.pre_laser_pose[2]), self.pre_laser_pose[0]],
-        #                     [np.sin(self.pre_laser_pose[2]), np.cos(self.pre_laser_pose[2]), self.pre_laser_pose[1]],
-        #                     [0, 0, 1]])
+        pre_iso = np.array([[np.cos(self.pre_laser_pose[2]), -np.sin(self.pre_laser_pose[2]), self.pre_laser_pose[0]],
+                            [np.sin(self.pre_laser_pose[2]), np.cos(self.pre_laser_pose[2]), self.pre_laser_pose[1]],
+                            [0, 0, 1]])
         # # now_iso =  delta_iso @ np.array([self.pre_laser_pose[0], self.pre_laser_pose[1], 1])
         # # print(delta_iso)
-        # now_iso =   delta_iso @ pre_iso 
-        d_theta, d_t = np.arctan2(delta_iso[1, 0], delta_iso[0, 0]), np.array([delta_iso[0, 2], delta_iso[1, 2]])
-        delta_pose = np.array([*d_t, d_theta])
-        now_pose = delta_pose + self.pre_laser_pose
-        # now_pose = np.array([now_iso[0, 2], now_iso[1, 2], np.arctan2(now_iso[1, 0], now_iso[0, 0])])
-        print("now pose:", now_pose)
+        now_iso =  pre_iso @ delta_iso  
+        
+        # now_pose = delta_pose + self.pre_laser_pose
+        now_pose = np.array([now_iso[0, 2], now_iso[1, 2], np.arctan2(now_iso[1, 0], now_iso[0, 0])])
+        # print("now pose:", now_pose)
         self.pub_scan_path(
             now_pose, self.imls_path_publisher, self.imls_path
         )
