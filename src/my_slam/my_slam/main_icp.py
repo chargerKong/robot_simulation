@@ -9,7 +9,6 @@ from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import Odometry, Path
 from sklearn.neighbors import KDTree
 import json
-# from my_slam.main_icp import ICP
 import math
 import numpy as np
 
