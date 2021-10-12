@@ -15,7 +15,8 @@
     <xacro:property name="caster_mass"    value="0.5" /> 
     <xacro:property name="caster_radius"  value="0.015"/> <!-- wheel_radius - ( base_length/2 - wheel_joint_z) -->
     <xacro:property name="caster_joint_x" value="0.18"/>
-
+    
+   
     <xacro:macro name="cylinder_inertial_matrix" params="m r h">
         <inertial>
             <mass value="${m}" />
@@ -141,7 +142,6 @@
             </collision>   
             <xacro:cylinder_inertial_matrix  m="${base_mass}" r="${base_radius}" h="${base_length}" />
         </link>
-        
             <gazebo reference="base_link">
                 <material>Gazebo/Orange</material>
             </gazebo>
@@ -150,6 +150,8 @@
 
         <xacro:caster prefix="front" reflect="-1"/>
         <xacro:caster prefix="back"  reflect="1"/>
+
+
         <gazebo>
             <plugin name="differential_drive_controller" 
                     filename="libgazebo_ros_diff_drive.so">

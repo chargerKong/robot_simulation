@@ -22,13 +22,13 @@ options = {
   map_frame = "map",                        -- 地图坐标系的名字
   tracking_frame = "base_footprint",              -- 将所有传感器数据转换到这个坐标系下
   published_frame = "odom",                  -- tf: map -> footprint
-  odom_frame = "odome",                      -- 里程计的坐标系名字
+  odom_frame = "odom",                      -- 里程计的坐标系名字
   provide_odom_frame = false,               -- 是否提供odom的tf, 如果为true,则tf树为map->odom->footprint
                                             -- 如果为false tf树为map->footprint
   publish_frame_projected_to_2d = false,    -- 是否将坐标系投影到平面上
   --use_pose_extrapolator = false,            -- 发布tf时是使用pose_extrapolator的位姿还是前端计算出来的位姿
 
-  use_odometry = false,                     -- 是否使用里程计,如果使用要求一定要有odom的tf
+  use_odometry = true,                     -- 是否使用里程计,如果使用要求一定要有odom的tf
   use_nav_sat = false,                      -- 是否使用gps
   use_landmarks = false,                    -- 是否使用landmark
   num_laser_scans = 1,                      -- 是否使用单线激光数据

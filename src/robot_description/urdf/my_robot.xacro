@@ -4,6 +4,8 @@
     <xacro:include filename="$(find robot_description)/my_robot_base.xacro" />
     
     <xacro:include filename="$(find robot_description)/my_robot_lidar.xacro" />
+    
+    <xacro:include filename="$(find robot_description)/imu.xacro" />
 
     <joint name="lidar_joint" type="fixed">
         <origin xyz="${base_radius-lidar_radius} 0 ${base_length+wheel_radius/3}" rpy="0 0 0" />
@@ -11,7 +13,14 @@
         <child link="lidar_link" />
     </joint>
     
+    <joint name="imu_joint" type="fixed">
+      <parent link="base_link"/>
+      <child link="imu_link"/>
+      <origin xyz="0 0 ${wheel_radius}"/>
+    </joint>
+ 
     <xacro:my_robot_base/>
     <xacro:lidar/>
+    <xacro:imu_/>
 
 </robot>
