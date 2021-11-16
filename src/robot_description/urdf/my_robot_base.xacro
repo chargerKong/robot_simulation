@@ -166,7 +166,7 @@
                 <left_joint>left_wheel_joint</left_joint>
                 <right_joint>right_wheel_joint</right_joint>
                 
-                <update_rate>100.0</update_rate>
+                <update_rate>10.0</update_rate>
                 <!-- 表示两个驱动轮的距离, 单位为米 -->
                 <wheel_separation>${wheel_joint_y*2}</wheel_separation>
                 <!-- 表示轮子的直径, 单位为米 -->
@@ -187,7 +187,7 @@
                   <namespace>/</namespace>
                   <argument>--ros-args --remap joint_states:=joint_states</argument>
                 </ros>
-                <update_rate>100</update_rate>
+                <update_rate>10</update_rate>
                 <joint_name>left_wheel_joint</joint_name>
                 <joint_name>right_wheel_joint</joint_name>
                 <joint_name>front_caster_joint</joint_name>

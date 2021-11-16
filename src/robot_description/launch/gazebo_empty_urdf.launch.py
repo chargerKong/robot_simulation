@@ -11,7 +11,8 @@ import xacro
 def generate_launch_description():
     pkg_gazebo_ros = get_package_share_directory("gazebo_ros")
     # "example1"
-    urdf_file = os.path.join(get_package_share_directory('robot_description'), 'example1.urdf')
+    urdf_file = "/home/kong/dev_ws/src/robot_description/urdf/example1.urdf"
+    # urdf_file = os.path.join(get_package_share_directory('robot_description'), 'example1.urdf')
     # urdf_file = os.path.join(get_package_share_directory('robot_description'), 'example2.urdf')
     # urdf_file = os.path.join(get_package_share_directory('robot_description'), 'example3.urdf')
     # urdf_file = os.path.join(get_package_share_directory('robot_description'), 'example4.urdf')
